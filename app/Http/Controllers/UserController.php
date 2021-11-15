@@ -44,24 +44,21 @@ class UserController extends Controller
     //login function
     public function login(Request $request)
     {
+        // 'email' => 'required|email|unique:users',
+        // 'password'=> 'required|confirmed',
         $validate =Validator::make($request->all(), [
             'email' => 'required|email',
             'password'=> 'required',
         ]);
         if ($validate->fails()) {
-            return response()->json(
-                [
-                    "Message"=>"Please check your email or password pattern and try again"
-                ],
-                200
-            );
+            return response()->json( $validate->errors()->toJson(),400);
         }
 
         if ($user=Auth::attempt(['email' =>  $request->email, 'password' =>  $request->password])) {
             $user = auth()->user();
 
             if (User::where('id', $user->id)->value('verified')==1) {
-                $key = "example_key";
+                $key = "owt125";
                 $data = [
                 "id"=>$user->id,
                 "name"=>$user->name,
@@ -72,7 +69,7 @@ class UserController extends Controller
                 "iss" => "http://localhost.com",
                 "aud" => "http://localhost.com",
                 "iat" => time(),
-                "nbf" => time() +3600,
+                "nbf" => time(),
                 "data"=> $data
             );
 
@@ -125,5 +122,13 @@ class UserController extends Controller
                 "Message"=>"Token is incorrect"
             ], 400);
         }
+    }
+
+    //function to decode token
+    public function decodeToken($token){
+        $secret = "owt125";
+        $decoded_data = JWT::decode($token,new Key($secret,'HS256'));
+        $user_data = $decoded_data->data;
+        return $user_data;
     }
 }

@@ -5,15 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Post extends Model
+class Friends extends Model
 {
     use HasFactory;
-
     protected $fillable = [
         'user_id',
-        'caption',
-        'body',
-        'file',
-        'visibile'
+        'friend_id'
     ];
 }

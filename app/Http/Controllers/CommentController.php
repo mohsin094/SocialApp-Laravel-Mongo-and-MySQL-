@@ -1,51 +1,48 @@
 <?php
 
 namespace App\Http\Controllers;
-
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
+use App\Models\User;
+use App\Models\Comment;
 
 class CommentController extends Controller
 {
 
     //post function
-    public function comment(Request $request)
+    public function addComment(Request $request)
     {
         $token=$request->bearerToken();
 
         if (User::where("remember_token", $token)->exists()){
-            $data = $this->decodeToken($token);
-            $posts = new Post;
+            $userObj = new UserController();
+            $data =  $userObj->decodeToken($token);
+            $comment = new Comment;
 
             $validate =Validator::make($request->all(), [
-                'caption' => 'required|string|between:2,100',
-                'body'=> 'string|max:1000',
-                'file' => 'mimes:jpg,png,docs,txt,mp4,pdf,ppt|max:10000',
-                'visibile'=>'boolean',
+                'post_id'=>'required|integer',
+                 'body' => 'required|string|between:2,100',
+                //'body' => 'string|mimes:jpg,png,docs,txt,mp4,pdf,ppt|max:10000',
             ]);
             if ($validate->fails()) {
                 return response()->json( $validate->errors()->toJson(),400);
             }
 
+            $comment->post_id=$request->post_id;
+            $comment->body=$request->body;
+            $comment->user_id=$data->id;
 
-            $posts->user_id=$data->id;
-            $posts->caption=$request->caption;
-            $posts->body=$request->body;
-            $posts->visibile=$request->visibile;
-                    $fileName = time().'_'.$request->file->getClientOriginalName();
-                    $filePath = $request->file('file')->storeAs('uploads', $fileName, 'public');
-            $posts->file = '/storage/' . $filePath;
-
-        $result = $posts->save();
+        $result = $comment->save();
         if ($result) {
             return response()->json(
                 [
-                    'Message'=>"Your post is publish successfully"
+                    'Message'=>"Your comment is publish successfully"
                 ],400
             );
         } else {
             return response()->json(
                 [
-                    'Error'=>"Error in publishing post"
+                    'Error'=>"Error in publishing comment"
                 ],400
             );
         }

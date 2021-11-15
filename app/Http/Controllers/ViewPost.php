@@ -1,33 +1,30 @@
 <?php
 
 namespace App\Http\Controllers;
-use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\Post;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
-class PostController extends Controller
+class ViewPost extends Controller
 {
-
     //post function
     public function post(Request $request)
     {
         $token=$request->bearerToken();
 
-        if (User::where("remember_token", $token)->exists()){
+        if (c){
             $obj = new UserController();
             $data = $obj->decodeToken($token);
             $posts = new Post;
 
             $validate =Validator::make($request->all(), [
-                'caption' => 'required|string|between:2,100',
-                'body'=> 'string|max:1000',
-                'file' => 'mimes:jpg,png,docs,txt,mp4,pdf,ppt|max:10000',
-                'visibile'=>'boolean',
+                'post_id' => 'required|integer|between:2,100',
             ]);
             if ($validate->fails()) {
                 return response()->json( $validate->errors()->toJson(),400);
             }
 
+            $result=User::where("remember_token", $token)->exists()
 
             $posts->user_id=$data->id;
             $posts->caption=$request->caption;
