@@ -2,31 +2,48 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\RegistrationRequest;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
+use MongoDB\Client as connection;
 
 class UserController extends Controller
 {
-
-
 //registration function
-    public function registration(Request $req)
+    public function registration(RegistrationRequest $req)
     {
-        $users = new User;
-        $users->name=$req->name;
-        $users->email=$req->email;
-        $users->password=bcrypt($req->password);
+        $validate = $req->validated();
 
-        $result = $users->save();
-        if ($result) {
-            UserController::sendVerificationLink($req->name, $req->email);
+            $email =$validate["email"];
+            $db =(new connection)->socialApp->users;
+            $check = $db->findOne(['email'=>$email]);
+            if($check){
+                return response()->json([
+                    'Message' => "User email already registered!"
+                ], 400);
+            }
+            else{
+            $db->insertOne([
+            'name' => $validate['name'],
+            'email' => $validate["email"],
+            'password'=>bcrypt($validate["password"]),
+            ]);
+
+        if ($db) {
+             UserController::sendVerificationLink($req->name, $req->email);
+             return response()->json([
+                'Message' => "Verification email is send!"
+            ], 200);
         } else {
-            return ["Result"=>"Not registered"];
+            return response()->json([
+                'Message' => "Database error!"
+            ], 400);
         }
+    }
     }
 
     //method to send verification link
@@ -34,18 +51,14 @@ class UserController extends Controller
     {
         $details = [
                 'name' =>$name,
-                'Link'=>url('api/verifyemail/'.$email)
+                'Link'=>url('user/verifyemail/'.$email)
             ];
-
         \Mail::to($email)->send(new \App\Mail\MyTestMail($details));
-        dd("verification Email is Sent.");
     }
 
     //login function
     public function login(Request $request)
     {
-        // 'email' => 'required|email|unique:users',
-        // 'password'=> 'required|confirmed',
         $validate =Validator::make($request->all(), [
             'email' => 'required|email',
             'password'=> 'required',
@@ -53,17 +66,15 @@ class UserController extends Controller
         if ($validate->fails()) {
             return response()->json( $validate->errors()->toJson(),400);
         }
-
-        if ($user=Auth::attempt(['email' =>  $request->email, 'password' =>  $request->password])) {
-            $user = auth()->user();
-
-            if (User::where('id', $user->id)->value('verified')==1) {
+        $db =(new connection)->socialApp->users;
+        if ($user = $db->findOne(['email'=>$request->email])) {
+            if (isset($user['verified'])) {
                 $key = "owt125";
                 $data = [
-                "id"=>$user->id,
-                "name"=>$user->name,
-                "email"=>$user->email,
-                "password"=>$user->password
+                "id"=>$user['_id'],
+                "name"=>$user['name'],
+                "email"=>$user['email'],
+                "password"=>$user['password']
             ];
                 $payload = array(
                 "iss" => "http://localhost.com",
@@ -75,11 +86,7 @@ class UserController extends Controller
 
 
                 $jwt =  JWT::encode($payload, $key, 'HS256');
-
-                $user->remember_token=$jwt;
-
-                User::where("email", $user->email)->update(["remember_token"=>$jwt]);
-
+                $db->updateOne(['email'=>$request->email],  ['$set' => ['remember_token' => $jwt]]);
                 $success = [
                 "status"=>"success",
                 "token"=> $jwt,
@@ -88,6 +95,10 @@ class UserController extends Controller
                 return response()->json($success);
             } else {
                 UserController::sendVerificationLink($user->name, $user->email);
+                return response()->json([
+                    'Message' => "Verification email is send!"
+                ], 200);
+
             }
         } else {
             return response()->json([
@@ -100,7 +111,9 @@ class UserController extends Controller
     //function to verify user
     public function verify($email)
     {
-        User::where("email", $email)->update(["verified"=>true,"email_verified_at"=>date('Y-m-d H:i:s')]);
+        $db =(new connection)->socialApp->users;
+        $db->updateOne(['email'=>$email],  ['$set' => ['verified' => 1]]);
+        //User::where("email", $email)->update(["verified"=>true,"email_verified_at"=>date('Y-m-d H:i:s')]);
         return response()->json([
                     'Message' => "Your account is verified"
                 ], 200);
@@ -110,9 +123,9 @@ class UserController extends Controller
     //logout function
     public function logout(Request $request)
     {
-        $token =$request->token;
-        $result=User::where("remember_token", $token)->update(["remember_token"=>null]);
-
+        $token =$request->bearerToken();
+        $db = (new Connection)->socialApp->users;
+        $result=$db->updateOne(['remember_token'=>$token],['$unset'=>['remember_token'=>null]]);
         if ($result) {
             return response()->json([
                 "Message"=>"Successfully logout"

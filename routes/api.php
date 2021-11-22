@@ -27,6 +27,8 @@ Route::get("verifyemail/{email}",[UserController::class,'verify']);
 Route::post("logout",[UserController::class,'logout']);
 
 
+
+
 Route::post("post",[PostController::class,'post']);
 Route::post("comment",[CommentController::class,'addComment']);
 Route::post("addFriend",[FriendController::class,'addFriend']);

@@ -28,13 +28,21 @@ class FriendController extends Controller
                 if ($validate->fails()) {
                     return response()->json( $validate->errors()->toJson(),400);
                 }
-
-                $friend->user_id=$data->id;
+                $user =User::find($data->id);
+                //$friend->user_id=$data->id;
                 $friend->friend_id=$request->friend_id;
+               if($data->id==$request->friend_id){
+                return response()->json(
+                    [
+                        'Message'=>"You can't add yourself"
+                    ],400
+                );
+               }
 
+               if (User::where("id", $request->friend_id)->exists()){
                 //validation to check if already friends
                 if (Friends::where('user_id', $data->id)->value('friend_id')==$request->friend_id
-                ||Friends::where('friend_id', $request->friend_id)->value('user_id')==$request->user_id){
+                ||Friends::where('friend_id', $request->friend_id)->value('user_id')==$data->id){
                     return response()->json(
                         [
                             'Message'=>"You are already friends"
@@ -43,8 +51,9 @@ class FriendController extends Controller
                 }
 
                 //validation to check the requesting friend exist in user table and user can't make friend himself
-                if (User::where("id", $request->friend_id)->exists() && $data->id!=$request->friend_id){
-                    $result = $friend->save();
+             
+                   // $result = $friend->save();
+                    $result = $user->friends()->save($friend);
                     if ($result) {
                         return response()->json(
                             [

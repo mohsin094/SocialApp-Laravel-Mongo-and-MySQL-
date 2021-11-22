@@ -16,11 +16,11 @@ class PostController extends Controller
         if (User::where("remember_token", $token)->exists()){
             $obj = new UserController();
             $data = $obj->decodeToken($token);
-            $posts = new Post;
+            
 
             $validate =Validator::make($request->all(), [
                 'caption' => 'required|string|between:2,100',
-                'body'=> 'string|max:1000',
+                'body'=> 'required|string|max:1000',
                 'file' => 'mimes:jpg,png,docs,txt,mp4,pdf,ppt|max:10000',
                 'visibile'=>'boolean',
             ]);
@@ -28,8 +28,10 @@ class PostController extends Controller
                 return response()->json( $validate->errors()->toJson(),400);
             }
 
-
-            $posts->user_id=$data->id;
+            //check the user eixt in usre table
+            $user = User::find($data->id);
+            
+            $posts = new Post;
             $posts->caption=$request->caption;
             $posts->body=$request->body;
             $posts->visibile=$request->visibile;
@@ -37,12 +39,12 @@ class PostController extends Controller
                     $filePath = $request->file('file')->storeAs('uploads', $fileName, 'public');
             $posts->file = '/storage/' . $filePath;
 
-        $result = $posts->save();
+        $result = $user->posts()->save($posts);
         if ($result) {
             return response()->json(
                 [
                     'Message'=>"Your post is publish successfully"
-                ],400
+                ],200
             );
         } else {
             return response()->json(

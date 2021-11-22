@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use App\Models\User;
+use App\Models\Post;
 use App\Models\Comment;
 
 class CommentController extends Controller
@@ -17,8 +18,7 @@ class CommentController extends Controller
         if (User::where("remember_token", $token)->exists()){
             $userObj = new UserController();
             $data =  $userObj->decodeToken($token);
-            $comment = new Comment;
-
+           
             $validate =Validator::make($request->all(), [
                 'post_id'=>'required|integer',
                  'body' => 'required|string|between:2,100',
@@ -28,16 +28,23 @@ class CommentController extends Controller
                 return response()->json( $validate->errors()->toJson(),400);
             }
 
-            $comment->post_id=$request->post_id;
+            $user =User::find($data->id);
+            $post = Post::find($request->post_id);
+            
+            $comment = new Comment;
             $comment->body=$request->body;
-            $comment->user_id=$data->id;
 
-        $result = $comment->save();
+        //go to comment model, check call users() function and put user key as a foreign key in comment table
+           $comment->users()->associate($user);
+           $comment->posts()->associate($post);
+           
+           $result = $comment->save();
+
         if ($result) {
             return response()->json(
                 [
                     'Message'=>"Your comment is publish successfully"
-                ],400
+                ],200
             );
         } else {
             return response()->json(
