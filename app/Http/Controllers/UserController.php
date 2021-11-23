@@ -3,8 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\RegistrationRequest;
-use App\Models\User;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Firebase\JWT\JWT;
@@ -71,7 +69,7 @@ class UserController extends Controller
             if (isset($user['verified'])) {
                 $key = "owt125";
                 $data = [
-                "id"=>$user['_id'],
+                "id"=>(string)$user['_id'],
                 "name"=>$user['name'],
                 "email"=>$user['email'],
                 "password"=>$user['password']

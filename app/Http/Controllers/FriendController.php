@@ -1,37 +1,20 @@
 <?php
-
 namespace App\Http\Controllers;
-use App\Models\User;
-use App\Models\Friends;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Http\Request;
+use App\Http\Requests\FriendRequest;
+use MongoDB\Client as Connection;
 
 class FriendController extends Controller
 {
      //post function
-     public function addFriend(Request $request)
+     public function addFriend(FriendRequest $request)
      {
-         $token=$request->bearerToken();
+         $validate =$request->validated();
 
-         //check the token exist in user table
-         if (User::where("remember_token", $token)->exists()){
+         $token=$request->bearerToken();
                 $userObj = new UserController();
                 $data =  $userObj->decodeToken($token);
-                $friend = new Friends;
 
-
-                $validate =Validator::make($request->all(), [
-                    'friend_id'=>'required|integer',
-                    //'body' => 'required|string|between:2,100',
-                    //'body' => 'string|mimes:jpg,png,docs,txt,mp4,pdf,ppt|max:10000',
-                ]);
-                if ($validate->fails()) {
-                    return response()->json( $validate->errors()->toJson(),400);
-                }
-                $user =User::find($data->id);
-                //$friend->user_id=$data->id;
-                $friend->friend_id=$request->friend_id;
-               if($data->id==$request->friend_id){
+               if($data->id==$validate['friend_id']){
                 return response()->json(
                     [
                         'Message'=>"You can't add yourself"
@@ -39,21 +22,28 @@ class FriendController extends Controller
                 );
                }
 
-               if (User::where("id", $request->friend_id)->exists()){
+               $db=(new Connection)->socialApp->users;
+               $user_id = new \MongoDB\BSON\ObjectId($data->id);
+               $friend_id = new \MongoDB\BSON\ObjectId($validate['friend_id']);
+
+               $exist = $db->findOne(['_id'=>$friend_id]);
+               if (isset($exist)){
                 //validation to check if already friends
-                if (Friends::where('user_id', $data->id)->value('friend_id')==$request->friend_id
-                ||Friends::where('friend_id', $request->friend_id)->value('user_id')==$data->id){
-                    return response()->json(
-                        [
-                            'Message'=>"You are already friends"
-                        ],400
-                    );
-                }
+                // if (Friends::where('user_id', $data->id)->value('friend_id')==$request->friend_id
+                // ||Friends::where('friend_id', $request->friend_id)->value('user_id')==$data->id){
+                //     return response()->json(
+                //         [
+                //             'Message'=>"You are already friends"
+                //         ],400
+                //     );
+                // }
 
                 //validation to check the requesting friend exist in user table and user can't make friend himself
-             
-                   // $result = $friend->save();
-                    $result = $user->friends()->save($friend);
+                $friend=array(
+                    '_id'=>new \MongoDB\BSON\ObjectId(),
+                    'friend_id'=>$friend_id,
+                );
+                $result = $db->updateOne(['_id'=>$user_id],['$push'=>['friends'=>$friend]]);
                     if ($result) {
                         return response()->json(
                             [
@@ -63,7 +53,7 @@ class FriendController extends Controller
                     } else {
                         return response()->json(
                             [
-                                'Error'=>"Error in adding friend"
+                                'Error'=>"Database error!"
                             ],400
                         );
                     }
@@ -75,15 +65,6 @@ class FriendController extends Controller
                         ],400
                     );
                 }
-
-            }
-         else {
-            return response()->json(
-                [
-                    'Token error'=>"Token expired!"
-                ],400
-            );
-        }
 
      }
 }

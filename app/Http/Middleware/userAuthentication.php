@@ -1,11 +1,9 @@
 <?php
 
 namespace App\Http\Middleware;
-use App\Models\User;
 use Closure;
 use Illuminate\Http\Request;
 use MongoDB\Client as connection;
-use MongoDB\Operation\FindOne;
 
 class userAuthentication
 {
