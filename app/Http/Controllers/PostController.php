@@ -25,11 +25,7 @@ class PostController extends Controller
                 'visibile'=>$validate['visibile'],
                 ]);
         if ($result) {
-            return response()->json(
-                [
-                    'Message'=>"Your post is publish successfully"
-                ],200
-            );
+            return response()->success('Your post is publish successfully!',200);
         }
 }
 }

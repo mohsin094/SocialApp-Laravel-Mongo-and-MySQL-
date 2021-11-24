@@ -15,11 +15,7 @@ class FriendController extends Controller
                 $data =  $userObj->decodeToken($token);
 
                if($data->id==$validate['friend_id']){
-                return response()->json(
-                    [
-                        'Message'=>"You can't add yourself"
-                    ],400
-                );
+                    return response()->error('User does not exist!',400);
                }
 
                $db=(new Connection)->socialApp->users;
@@ -45,25 +41,13 @@ class FriendController extends Controller
                 );
                 $result = $db->updateOne(['_id'=>$user_id],['$push'=>['friends'=>$friend]]);
                     if ($result) {
-                        return response()->json(
-                            [
-                                'Message'=>"Friend added successfully"
-                            ],200
-                        );
+                        return response()->success('Friend added successfully!',200);
                     } else {
-                        return response()->json(
-                            [
-                                'Error'=>"Database error!"
-                            ],400
-                        );
+                        return response()->error('Database error!!',400);
                     }
                 }
                 else{
-                    return response()->json(
-                        [
-                            'Error'=>"Requesting friend does not exist"
-                        ],400
-                    );
+                    return response()->error('User does not exist!',400);
                 }
 
      }

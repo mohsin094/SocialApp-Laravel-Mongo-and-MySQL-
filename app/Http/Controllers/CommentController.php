@@ -29,11 +29,7 @@ class CommentController extends Controller
             $db=(new Connection)->socialApp->posts;
             $result = $db->updateOne(["_id"=>$post_id],['$push'=>["comments"=>$comment]]);
         if (isset($result)) {
-            return response()->json(
-                [
-                    'Message'=>"Your comment is publish successfully"
-                ],200
-            );
+            return response()->success('Your comment is publish successfully!',200);
 
         }
 
