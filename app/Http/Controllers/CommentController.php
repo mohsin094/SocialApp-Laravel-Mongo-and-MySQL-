@@ -11,8 +11,8 @@ class CommentController extends Controller
     {
         try{
             $validate = $request->validated();
-            $token=$request->bearerToken();
-                $data = (new UserController())->decodeToken($token);
+                $data = $request->data;
+
                 $fileName = time().'_'.$validate['file']->getClientOriginalName();
                 $filePath = $request->file('file')->storeAs('comments', $fileName, 'public');
                 $post_id = new \MongoDB\BSON\ObjectId($validate['post_id']);

@@ -5,8 +5,6 @@ use Illuminate\Http\Request;
 use App\Http\Requests\RegistrationRequest;
 use App\Http\Requests\LoginRequest;
 use Illuminate\Support\Facades\Hash;
-use Firebase\JWT\JWT;
-use Firebase\JWT\key;
 //import custom services
 use App\Services\DbConnection;
 use App\Services\Authentication;
@@ -62,11 +60,7 @@ class UserController extends Controller
                     $authentication = new Authentication($userDate);
                     $jwt = $authentication->getToken();
                         $db->updateOne(['email'=>$validate['email']],  ['$set' => ['remember_token' => $jwt]]);
-                        $success = [
-                        "token"=> $jwt,
-                        "data"=>$userDate
-                    ];
-                        return response()->success($success,200);
+                        return response()->success($jwt,200);
                     } else {
                         new VerificationLink($userDate->name, $userDate->email);
                         return response()->success('Verification email is send!',200);
@@ -105,18 +99,6 @@ class UserController extends Controller
             $db->updateOne(['email'=>$email],  ['$set' => ['verified' => 1]]);
             //User::where("email", $email)->update(["verified"=>true,"email_verified_at"=>date('Y-m-d H:i:s')]);
             return response()->success('Your account is verified!',200);
-        }catch(\Exception $e){
-            return response()->error($e->getMessage(),400);
-        }
-    }
-
-    //function to decode token
-    public function decodeToken($token){
-        try{
-            $secret = "owt125";
-            $decoded_data = JWT::decode($token,new Key($secret,'HS256'));
-            $user_data = $decoded_data->data;
-            return $user_data;
         }catch(\Exception $e){
             return response()->error($e->getMessage(),400);
         }

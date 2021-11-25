@@ -5,3 +5,4 @@ use Illuminate\Support\Facades\Route;
 
 Route::post("post",[PostController::class,'publishPost'])->middleware('userAuthentication');
 Route::post("comment",[CommentController::class,'addComment'])->middleware('userAuthentication');
+Route::post("viewPosts",[PostController::class,'viewPosts'])->middleware('userAuthentication');

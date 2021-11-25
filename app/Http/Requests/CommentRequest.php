@@ -26,6 +26,7 @@ class CommentRequest extends FormRequest
     public function rules()
     {
         return [
+            
             'post_id'=>'required',
             'file' => 'mimes:jpg,png,docs,txt,mp4,pdf,ppt|max:10000',
             'body' => 'required|string|between:2,100',

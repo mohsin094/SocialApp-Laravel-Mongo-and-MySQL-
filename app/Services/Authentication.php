@@ -1,6 +1,7 @@
 <?php
 namespace App\Services;
 use Firebase\JWT\JWT;
+use Firebase\JWT\Key;
 class Authentication
 {
     protected $token;
@@ -13,7 +14,7 @@ class Authentication
                 "password"=>$userDate['password']
                 ];
 
-            $key = "owt125";
+            $key = config('constant.secret_key');
             $payload = array(
                 "iss" => "http://localhost.com",
                 "aud" => "http://localhost.com",
@@ -31,5 +32,4 @@ class Authentication
     public function getToken(){
         return $this->token;
     }
-
 }

@@ -10,8 +10,7 @@ class FriendController extends Controller
      {
         try{
             $validate =$request->validated();
-            $token=$request->bearerToken();
-            $data = (new UserController())->decodeToken($token);
+            $data = $request->data;
 
                 if($data->id==$validate['friend_id']){
                         return response()->error('User does not exist!',400);
@@ -23,17 +22,16 @@ class FriendController extends Controller
 
                $exist = $dbUsers->findOne(['_id'=>$friend_id]);
                if (isset($exist)){
+                    $check = $dbUsers->findOne(["_id" => $user_id,'friends.friend_id'=>$friend_id]);
+                    if(isset($check )){
+                        return response()->error('You are already friends!',400);
+                    }
 
-
-                $check = $dbUsers->findOne(["_id" => $user_id,'friends.friend_id'=>$friend_id]);
-                if(isset($check )){
-                    return response()->error('You are already friends!',400);
-                }
-                    $friend=array(
-                        '_id'=>new \MongoDB\BSON\ObjectId(),
-                        'friend_id'=>$friend_id,
-                   );
-                $result = $dbUsers->updateOne(['_id'=>$user_id],['$push'=>['friends'=>$friend]]);
+                        $friend=array(
+                            '_id'=>new \MongoDB\BSON\ObjectId(),
+                            'friend_id'=>$friend_id,
+                        );
+                    $result = $dbUsers->updateOne(['_id'=>$user_id],['$push'=>['friends'=>$friend]]);
                     if ($result) {
                         return response()->success('Friend added successfully!',200);
                     } else {
