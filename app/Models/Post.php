@@ -8,12 +8,13 @@ use Illuminate\Database\Eloquent\Model;
 class Post extends Model
 {
     use HasFactory;
+    public function users()
+    {
+        return $this->belongsTo(User::class);
+    }
 
-    protected $fillable = [
-        'user_id',
-        'caption',
-        'body',
-        'file',
-        'visibile'
-    ];
+    public function comments(){
+        return $this->hasMany(Comment::class);
+    }
+
 }

@@ -5,25 +5,27 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
+use App\Http\Requests\RegistrationRequest;
+use App\Http\Requests\LoginRequest;
 
 class UserController extends Controller
 {
 
-
 //registration function
-    public function registration(Request $req)
+    public function registration(RegistrationRequest $request)
     {
         $users = new User;
-        $users->name=$req->name;
-        $users->email=$req->email;
-        $users->password=bcrypt($req->password);
+
+        $validate = $request->validated();
+        $users->name=$validate['name'];
+        $users->email=$validate['email'];
+        $users->password=bcrypt($validate['password']);
 
         $result = $users->save();
         if ($result) {
-            UserController::sendVerificationLink($req->name, $req->email);
+            UserController::sendVerificationLink($validate['name'], $validate['email']);
         } else {
             return ["Result"=>"Not registered"];
         }
@@ -34,7 +36,7 @@ class UserController extends Controller
     {
         $details = [
                 'name' =>$name,
-                'Link'=>url('api/verifyemail/'.$email)
+                'Link'=>url('user/verifyemail/'.$email)
             ];
 
         \Mail::to($email)->send(new \App\Mail\MyTestMail($details));
@@ -42,19 +44,11 @@ class UserController extends Controller
     }
 
     //login function
-    public function login(Request $request)
+    public function login(LoginRequest $request)
     {
-        // 'email' => 'required|email|unique:users',
-        // 'password'=> 'required|confirmed',
-        $validate =Validator::make($request->all(), [
-            'email' => 'required|email',
-            'password'=> 'required',
-        ]);
-        if ($validate->fails()) {
-            return response()->json( $validate->errors()->toJson(),400);
-        }
+        $validate =$request->validator();
 
-        if ($user=Auth::attempt(['email' =>  $request->email, 'password' =>  $request->password])) {
+        if ($user=Auth::attempt(['email' =>  $validate['email'], 'password' =>  $validate['password']])) {
             $user = auth()->user();
 
             if (User::where('id', $user->id)->value('verified')==1) {

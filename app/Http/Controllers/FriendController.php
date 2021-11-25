@@ -4,37 +4,35 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use App\Models\Friends;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Http\Request;
+use App\Http\Requests\AddFriendRequest;
 
 class FriendController extends Controller
 {
      //post function
-     public function addFriend(Request $request)
+     public function addFriend(AddFriendRequest $request)
      {
          $token=$request->bearerToken();
-
+         $validate = $request->validated();
          //check the token exist in user table
          if (User::where("remember_token", $token)->exists()){
                 $userObj = new UserController();
                 $data =  $userObj->decodeToken($token);
                 $friend = new Friends;
+                $user =User::find($data->id);
+                //$friend->user_id=$data->id;
+                $friend->friend_id=$validate['friend_id'];
+               if($data->id==$validate['friend_id']){
+                return response()->json(
+                    [
+                        'Message'=>"You can't add yourself"
+                    ],400
+                );
+               }
 
-
-                $validate =Validator::make($request->all(), [
-                    'friend_id'=>'required|integer',
-                    //'body' => 'required|string|between:2,100',
-                    //'body' => 'string|mimes:jpg,png,docs,txt,mp4,pdf,ppt|max:10000',
-                ]);
-                if ($validate->fails()) {
-                    return response()->json( $validate->errors()->toJson(),400);
-                }
-
-                $friend->user_id=$data->id;
-                $friend->friend_id=$request->friend_id;
-
+               if (User::where("id", $validate['friend_id'])->exists()){
                 //validation to check if already friends
-                if (Friends::where('user_id', $data->id)->value('friend_id')==$request->friend_id
-                ||Friends::where('friend_id', $request->friend_id)->value('user_id')==$request->user_id){
+                if (Friends::where('user_id', $data->id)->value('friend_id')==$validate['friend_id']
+                ||Friends::where('friend_id', $validate['friend_id'])->value('user_id')==$data->id){
                     return response()->json(
                         [
                             'Message'=>"You are already friends"
@@ -43,8 +41,7 @@ class FriendController extends Controller
                 }
 
                 //validation to check the requesting friend exist in user table and user can't make friend himself
-                if (User::where("id", $request->friend_id)->exists() && $data->id!=$request->friend_id){
-                    $result = $friend->save();
+                    $result = $user->friends()->save($friend);
                     if ($result) {
                         return response()->json(
                             [
