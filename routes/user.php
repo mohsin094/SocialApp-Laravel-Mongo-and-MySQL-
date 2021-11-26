@@ -9,4 +9,4 @@ Route::post("registration",[UserController::class,'registration']);
 Route::post("login",[UserController::class,'login']);
 Route::post("logout",[UserController::class,'logout']);
 Route::get("verifyemail/{email}",[UserController::class,'verify']);
-Route::post("addFriend",[FriendController::class,'addFriend']);
+Route::post("addFriend",[FriendController::class,'addFriend'])->middleware('UerAuthentication');

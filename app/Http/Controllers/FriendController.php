@@ -19,58 +19,33 @@ class FriendController extends Controller
                 $data =  $userObj->decodeToken($token);
                 $friend = new Friends;
                 $user =User::find($data->id);
-                //$friend->user_id=$data->id;
                 $friend->friend_id=$validate['friend_id'];
                if($data->id==$validate['friend_id']){
-                return response()->json(
-                    [
-                        'Message'=>"You can't add yourself"
-                    ],400
-                );
+                    return response()->error('You cant add yourself',400);
                }
 
                if (User::where("id", $validate['friend_id'])->exists()){
                 //validation to check if already friends
                 if (Friends::where('user_id', $data->id)->value('friend_id')==$validate['friend_id']
                 ||Friends::where('friend_id', $validate['friend_id'])->value('user_id')==$data->id){
-                    return response()->json(
-                        [
-                            'Message'=>"You are already friends"
-                        ],400
-                    );
+                    return response()->error('You are already friends',400);
                 }
 
                 //validation to check the requesting friend exist in user table and user can't make friend himself
                     $result = $user->friends()->save($friend);
                     if ($result) {
-                        return response()->json(
-                            [
-                                'Message'=>"Friend added successfully"
-                            ],200
-                        );
+                        return response()->success('Friend added successfully!',200);
                     } else {
-                        return response()->json(
-                            [
-                                'Error'=>"Error in adding friend"
-                            ],400
-                        );
+                        return response()->error('Error in adding friend!',400);
                     }
                 }
                 else{
-                    return response()->json(
-                        [
-                            'Error'=>"Requesting friend does not exist"
-                        ],400
-                    );
+                   return response()->error('Requesting friend does not exist',400);
                 }
 
             }
          else {
-            return response()->json(
-                [
-                    'Token error'=>"Token expired!"
-                ],400
-            );
+            return response()->error('Token expired!',400);
         }
 
      }
